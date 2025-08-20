@@ -1,31 +1,47 @@
+import math
 import sys
 import random
 import json
 from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5.QtCore import Qt, QTimer, QPoint
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QTransform
 import pyautogui
 
 g = 2
+
+
 class DesktopPet(QLabel):
-    def __init__(self):
+    def __init__(self, skin):
         super().__init__()
         self.setWindowFlags(Qt.FramelessWindowHint | Qt.WindowStaysOnTopHint | Qt.Tool)
         self.setAttribute(Qt.WA_TranslucentBackground)
+        self.skin = skin
 
         options = {}
 
-        with open("options.json", mode='r') as file:
+        with open(f"{self.skin}/options.json", mode='r') as file:
             options = json.load(file)
 
+        mirror = QTransform().scale(-1, 1)
+
+        self.rotateWriting = options["rotateWriting"]
+
+        self.jumpHeight = options["jumpHeight"]
+        self.maxspeed = options["maxSpeed"]
+
         self.animation = {
-            "left": [QPixmap(f"frame_{i}.png") for i in range(1, options["left"] + 1)],
-            "right": [QPixmap(f"frame_{i}_r.png") for i in range(1, options["right"] + 1)],
-            "tackle_left": [QPixmap(f"tackle_{i}.png") for i in range(1, options["tackle_left"] + 1)],
-            "tackle_right": [QPixmap(f"tackle_{i}_r.png") for i in range(1, options["tackle_right"] + 1)],
-            "writing": [QPixmap(f"writing_{i}.png") for i in range(1, options["writing"] + 1)],
-            "dragging": [QPixmap(f"dragging_{i}.png") for i in range(1, options["dragging"] + 1)],
-            "falling": [QPixmap(f"falling_{i}.png") for i in range(1, options["falling"] + 1)],
+            "left": [QPixmap(f"{self.skin}/frame_{i}.png") for i in range(1, options["move"] + 1)],
+            "right": [QPixmap(f"{self.skin}/frame_{i}.png").transformed(mirror) for i in range(1, options["move"] + 1)],
+            "tackle_left": [QPixmap(f"{self.skin}/tackle_{i}.png") for i in range(1, options["tackle"] + 1)],
+            "tackle_right": [QPixmap(f"{self.skin}/tackle_{i}.png").transformed(mirror) for i in
+                             range(1, options["tackle"] + 1)],
+            "writing_left": [QPixmap(f"{self.skin}/writing_{i}.png") for i in range(1, options["writing"] + 1)],
+            "writing_right": [QPixmap(f"{self.skin}/writing_{i}.png").transformed(mirror) for i in
+                              range(1, options["writing"] + 1)],
+            "dragging": [QPixmap(f"{self.skin}/dragging_{i}.png") for i in range(1, options["dragging"] + 1)],
+            "falling_left": [QPixmap(f"{self.skin}/falling_{i}.png") for i in range(1, options["falling"] + 1)],
+            "falling_right": [QPixmap(f"{self.skin}/falling_{i}.png").transformed(mirror) for i in
+                              range(1, options["falling"] + 1)]
         }
 
         self.frames = self.animation["left"]
@@ -35,7 +51,6 @@ class DesktopPet(QLabel):
         self.resize(self.frames[0].size())
         self.move(100, 100)
 
-        # Timer for animation frames
         self.anim_timer = QTimer()
         self.anim_timer.timeout.connect(self.next_frame)
         self.anim_timer.start(180)
@@ -49,7 +64,6 @@ class DesktopPet(QLabel):
         self.brain.start(10000)
 
         self.moved = False
-        self.maxspeed = 2
         self.vy = 0
         self.vx = 0
 
@@ -71,23 +85,21 @@ class DesktopPet(QLabel):
         self.targetX = 100
         self.dragging = False
         self.tackling = False
-        self.thoughts = "move"
+        self.thoughts = "writing"
 
     def next_frame(self):
-        if self.size !=  self.frames[0].size():
+        if self.size != self.frames[0].size():
             self.resize(self.frames[0].size())
-        if self.thoughts == "move":
-            if (self.vy) + abs(self.vx) != 0:
+        if self.thoughts == "move" or self.thoughts == "following":
+            if abs(self.vy) + abs(self.vx) != 0:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
                 self.setPixmap(self.frames[self.current_frame])
             else:
-                if self.current_frame != 3 and len(self.frames) >= 4:
-                    self.current_frame = 3
-                    self.setPixmap(self.frames[self.current_frame])
+                self.current_frame = 0
+                self.setPixmap(self.frames[self.current_frame])
         elif self.thoughts == "tackle" or self.thoughts == "writing" or self.thoughts == "":
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.setPixmap(self.frames[self.current_frame])
-
 
     def gravity(self):
         if not self.dragging:
@@ -98,31 +110,51 @@ class DesktopPet(QLabel):
             if self.y() < screen_geometry.height() - pet_size.height():
                 self.vy -= g
             new_y = min(screen_geometry.height() - pet_size.height(),
-                        self.y() - self.vy) if self.y() < screen_geometry.height() - pet_size.height() else self.y()
+                        self.y() - self.vy)
 
-            if self.y() == screen_geometry.height() - pet_size.height():
+            if self.y() == screen_geometry.height() - pet_size.height() and self.vy < 0:
                 self.vy = 0
-                if self.frames == self.animation["falling"]:
+                if self.frames == self.animation["falling_left"] or self.frames == self.animation["falling_right"]:
                     if self.thoughts == "move":
                         self.frames = self.animation["right"]
                     if self.thoughts == "tackle":
                         self.frames = self.animation["tackle_left"]
                     if self.thoughts == "writing":
-                        self.frames = self.animation["writing"]
+                        self.frames = self.animation["writing_left"]
+                    if self.thoughts == "following":
+                        self.frames = self.animation["right"]
 
             if self.y() != new_y:
-                self.frames = self.animation["falling"]
+                if pyautogui.position()[0] > self.x():
+                    self.frames = self.animation["falling_right"]
+                else:
+                    self.frames = self.animation["falling_left"]
                 self.move(new_x, new_y)
             else:
                 self.move_pet()
 
     def move_pet(self):
-        if self.thoughts == "move":
-            new_y = self.y()
-            if self.x() < self.targetX:
+        screen_geometry = QApplication.primaryScreen().geometry()
+
+        if self.thoughts == "move" or self.thoughts == "following":
+            if self.thoughts == "following":
+                new_targetX = pyautogui.position()[0] - self.size().width() if self.frames == self.animation[
+                    "left"] else pyautogui.position()[0]
+                if abs(new_targetX - self.x()) >= self.size().width():
+                    self.targetX = new_targetX
+                if self.y() > pyautogui.position()[1] and abs(self.y() - pyautogui.position()[1]) <= (
+                        self.size().height() * (self.size().height() / self.jumpHeight)) and self.y() == screen_geometry.height() - self.size().height() and abs(
+                    new_targetX - self.x()) <= self.size().width() * 2:
+                    self.vy = int(20 * math.sin(2 * ((abs(self.y() - pyautogui.position()[1])) / (self.size().height() * 1.3))))
+                    new_y = self.y() - self.vy
+                else:
+                    new_y = self.y()
+            else:
+                new_y = self.y()
+            if self.x() < self.targetX and self.y() == new_y:
                 self.frames = self.animation["right"]
                 self.vx = self.maxspeed if abs(self.x() - self.targetX) >= 10 else 1
-            elif self.x() > self.targetX:
+            elif self.x() > self.targetX and self.y() == new_y:
                 self.frames = self.animation["left"]
                 self.vx = -self.maxspeed if abs(self.x() - self.targetX) >= 10 else -1
             else:
@@ -132,13 +164,17 @@ class DesktopPet(QLabel):
 
             if self.vx != 0:
                 self.move(new_x, new_y)
+        elif self.thoughts == "writing" and self.rotateWriting:
+            if pyautogui.position()[0] > self.x():
+                self.frames = self.animation["writing_right"]
+            else:
+                self.frames = self.animation["writing_left"]
         elif self.thoughts == "tackle":
             if pyautogui.position()[0] > self.x():
                 self.frames = self.animation["tackle_right"]
             else:
                 self.frames = self.animation["tackle_left"]
             self.tackle_mouse_if_close()
-
 
     def think(self):
         screen_geometry = QApplication.primaryScreen().geometry()
@@ -153,7 +189,7 @@ class DesktopPet(QLabel):
             elif self.thoughts == 'tackle':
                 self.tackling = True
             elif self.thoughts == "writing":
-                self.frames = self.animation["writing"]
+                self.frames = self.animation["writing_left"]
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:
@@ -204,8 +240,13 @@ class DesktopPet(QLabel):
 
                 pyautogui.moveTo(new_mouse_x, new_mouse_y, duration=0.2)
 
+
 if __name__ == "__main__":
     app = QApplication(sys.argv)
-    pet = DesktopPet()
-    pet.show()
+    skin = input('Enter skin name: ')
+    try:
+        pet = DesktopPet(skin)
+        pet.show()
+    except Exception:
+        print("Error while loading skin")
     sys.exit(app.exec_())

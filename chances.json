@@ -1,5 +1,6 @@
 {
-  "move": 0.3,
-  "writing": 0.6,
-  "tackle": 0.1
+  "move": 0.2,
+  "writing": 0.5,
+  "tackle": 0.1,
+  "following": 0.2
 }

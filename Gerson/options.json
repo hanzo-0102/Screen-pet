@@ -1,0 +1,10 @@
+{
+  "move": 4,
+  "tackle": 3,
+  "writing": 6,
+  "rotateWriting": false,
+  "maxSpeed": 2,
+  "jumpHeight": 10,
+  "dragging": 1,
+  "falling": 12
+}
