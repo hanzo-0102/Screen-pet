@@ -161,7 +161,17 @@ class ScreenPet(QLabel):
             del actionName[-1]
             actionName = "_".join(actionName)
             if hasattr(self.customActions[actionName][0], "animate"):
-                self.current_frame = max(self.customActions[actionName][0].animate(self.current_frame) % len(self.frames), 0)
+                params = {
+                    "current_frame": self.current_frame,
+                    "x": self.x(),
+                    "y": self.y(),
+                    "width": self.size().width(),
+                    "height": self.size().height(),
+                    "cur_thought": self.thoughts,
+                    "mouseX": pyautogui.position()[0],
+                    "mouseY": pyautogui.position()[1]
+                }
+                self.current_frame = max(self.customActions[actionName][0].animate(params) % len(self.frames), 0)
                 self.setPixmap(self.frames[self.current_frame])
             else:
                 self.current_frame = (self.current_frame + 1) % len(self.frames)
@@ -271,8 +281,18 @@ class ScreenPet(QLabel):
                 del actionName[-1]
                 actionName = "_".join(actionName)
                 self.frames = self.animation[actionName + "_left"]
+                params = {
+                    "current_frame": self.current_frame,
+                    "x": self.x(),
+                    "y": self.y(),
+                    "width": self.size().width(),
+                    "height": self.size().height(),
+                    "cur_thought": self.thoughts,
+                    "mouseX": pyautogui.position()[0],
+                    "mouseY": pyautogui.position()[1]
+                }
                 if hasattr(self.customActions[actionName][0], "action"):
-                    self.customActions[actionName][0].action()
+                    self.customActions[actionName][0].action(params)
                 else:
                     print("Error while preforming action. No available action")
 

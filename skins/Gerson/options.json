@@ -7,6 +7,5 @@
   "maxSpeed": 2,
   "jumpHeight": 10,
   "dragging": 1,
-  "falling": 12,
-  "custom": ""
+  "falling": 12
 }
