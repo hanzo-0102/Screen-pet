@@ -4,5 +4,11 @@
     "options": "Настройки",
     "launch_pet": "Запустить Питомца",
     "hide_pet": "Спрятать Питомца",
-    "language_label": "Язык:"
+    "language_label": "Язык:",
+    "rotate_on_chilling": "Поворачиваться во время отдыха",
+    "speed": "Скорость",
+    "jump_height": "Высота прыжка",
+    "sizeText": "Размер (в пикселях)",
+    "save": "Сохранить",
+    "cancel": "Отмена"
 }

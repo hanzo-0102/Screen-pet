@@ -4,5 +4,11 @@
     "options": "Options",
     "launch_pet": "Launch Pet",
     "hide_pet": "Hide Pet",
-    "language_label": "Language:"
+    "language_label": "Language:",
+    "rotate_on_chilling": "Rotate on chilling",
+    "speed": "Speed",
+    "jump_height": "Jump height",
+    "sizeText": "Size (in px)",
+    "save": "Save",
+    "cancel": "Cancel"
 }

@@ -3,25 +3,96 @@ import os
 import json
 from PyQt5.QtWidgets import (
     QApplication, QWidget, QLabel, QPushButton, QVBoxLayout, QHBoxLayout,
-    QFileDialog, QComboBox, QDialog, QMessageBox
+    QFileDialog, QComboBox, QDialog, QMessageBox, QSlider, QScrollArea, QFormLayout, QCheckBox
 )
-from PyQt5.QtGui import QPixmap
+from PyQt5.QtGui import QPixmap, QIcon
 from PyQt5.QtCore import Qt
 from screenpet import ScreenPet
 
+
 class OptionsDialog(QDialog):
-    def __init__(self):
+    def __init__(self, owner, base):
         super().__init__()
-        self.setWindowTitle("Options")
-        self.setGeometry(400, 400, 300, 200)
-        layout = QVBoxLayout()
-        layout.addWidget(QLabel("Options go here"))
-        self.setLayout(layout)
+        self.owner = owner
+        self.setWindowTitle(base.get("options", "Options"))
+        self.setGeometry(400, 400, 350, 400)
+
+        main_layout = QVBoxLayout()
+
+        scroll_area = QScrollArea()
+        scroll_area.setWidgetResizable(True)
+        scroll_content = QWidget()
+        scroll_layout = QFormLayout(scroll_content)
+
+        self.rotate_checkbox = QCheckBox(base.get("rotate_on_chilling", "Rotate on chilling"))
+        self.rotate_checkbox.setChecked(base["rotateWriting"])
+        scroll_layout.addRow(self.rotate_checkbox)
+
+        self.speed_slider = QSlider(Qt.Horizontal)
+        self.speed_slider.setMinimum(1)
+        self.speed_slider.setMaximum(10)
+        self.speed_slider.setValue(base["maxSpeed"])
+        self.speed_label = QLabel(str(self.speed_slider.value()))
+        self.speed_slider.valueChanged.connect(lambda val: self.speed_label.setText(str(val)))
+        speed_layout = QHBoxLayout()
+        speed_layout.addWidget(self.speed_slider)
+        speed_layout.addWidget(self.speed_label)
+        scroll_layout.addRow(QLabel(base.get("speed", "Speed:")), speed_layout)
+
+        self.jump_slider = QSlider(Qt.Horizontal)
+        self.jump_slider.setMinimum(0)
+        self.jump_slider.setMaximum(720)
+        self.jump_slider.setValue(base["jumpHeight"])
+        self.jump_label = QLabel(str(self.jump_slider.value()))
+        self.jump_slider.valueChanged.connect(lambda val: self.jump_label.setText(str(val)))
+        jump_layout = QHBoxLayout()
+        jump_layout.addWidget(self.jump_slider)
+        jump_layout.addWidget(self.jump_label)
+        scroll_layout.addRow(QLabel(base.get("jump_height", "Jump height:")), jump_layout)
+
+        self.size_slider = QSlider(Qt.Horizontal)
+        self.size_slider.setMinimum(80)
+        self.size_slider.setMaximum(720)
+        self.size_slider.setValue(base["size"])
+        self.size_label = QLabel(str(self.size_slider.value()))
+        self.size_slider.valueChanged.connect(lambda val: self.size_label.setText(str(val)))
+        size_layout = QHBoxLayout()
+        size_layout.addWidget(self.size_slider)
+        size_layout.addWidget(self.size_label)
+        scroll_layout.addRow(QLabel(base.get("sizeText", "Size (in px):")), size_layout)
+
+        scroll_area.setWidget(scroll_content)
+        main_layout.addWidget(scroll_area)
+
+        buttons_layout = QHBoxLayout()
+        save_btn = QPushButton(base.get("save", "Save"))
+        cancel_btn = QPushButton(base.get("cancel", "Cancel"))
+        buttons_layout.addStretch()
+        buttons_layout.addWidget(save_btn)
+        buttons_layout.addWidget(cancel_btn)
+
+        main_layout.addLayout(buttons_layout)
+        self.setLayout(main_layout)
+
+        save_btn.clicked.connect(self.save_options)
+        cancel_btn.clicked.connect(self.reject)
+
+    def save_options(self):
+        options = {
+            "rotate_on_chilling": self.rotate_checkbox.isChecked(),
+            "speed": self.speed_slider.value(),
+            "jump_height": self.jump_slider.value(),
+            "size": self.size_slider.value()
+        }
+        self.owner(options)
+        self.accept()
+
 
 class Launcher(QWidget):
     def __init__(self):
         super().__init__()
         self.setWindowTitle("Screen-Pet Launcher")
+        self.setWindowIcon(QIcon("MyPc.png"))
         self.setGeometry(100, 100, 400, 350)
 
         self.pet = None
@@ -140,8 +211,25 @@ class Launcher(QWidget):
             self.folder_name_label.setText(folder_name)
 
     def open_options(self):
-        dlg = OptionsDialog()
-        dlg.exec_()
+        if self.skin_folder != "":
+            with open(f"{self.skin_folder}/options.json") as file:
+                data = json.load(file)
+            params = self.translations.copy()
+            for i in data.keys():
+                params[i] = data[i]
+            dlg = OptionsDialog(self.apply_options, params)
+            dlg.exec_()
+
+    def apply_options(self, arg):
+        with open(f"{self.skin_folder}/options.json") as file:
+            data = json.load(file)
+        data["rotateWriting"] = arg["rotate_on_chilling"]
+        data["maxSpeed"] = arg["speed"]
+        data["jumpHeight"] = arg["jump_height"]
+        data["size"] = arg["size"]
+
+        with open(f"{self.skin_folder}/options.json", mode='w+') as file:
+            json.dump(data, file)
 
     def launch_pet(self):
         if self.pet is None:
@@ -157,6 +245,7 @@ class Launcher(QWidget):
             self.pet = None
             self.hide_pet_btn.hide()
             self.launch_pet_btn.show()
+
 
 if __name__ == "__main__":
     app = QApplication(sys.argv)

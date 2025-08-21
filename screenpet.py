@@ -29,18 +29,29 @@ class ScreenPet(QLabel):
         self.jumpHeight = options["jumpHeight"]
         self.maxspeed = options["maxSpeed"]
 
+        self.scale = QTransform().scale(options["size"] / QPixmap(f"{self.skin}/frame_1.png").height(),
+                                        options["size"] / QPixmap(f"{self.skin}/frame_1.png").height())
+
         self.animation = {
-            "left": [QPixmap(f"{self.skin}/frame_{i}.png") for i in range(1, options["move"] + 1)],
-            "right": [QPixmap(f"{self.skin}/frame_{i}.png").transformed(mirror) for i in range(1, options["move"] + 1)],
-            "tackle_left": [QPixmap(f"{self.skin}/tackle_{i}.png") for i in range(1, options["tackle"] + 1)],
-            "tackle_right": [QPixmap(f"{self.skin}/tackle_{i}.png").transformed(mirror) for i in
+            "left": [QPixmap(f"{self.skin}/frame_{i}.png").transformed(self.scale) for i in
+                     range(1, options["move"] + 1)],
+            "right": [QPixmap(f"{self.skin}/frame_{i}.png").transformed(mirror).transformed(self.scale) for i in
+                      range(1, options["move"] + 1)],
+            "tackle_left": [QPixmap(f"{self.skin}/tackle_{i}.png").transformed(self.scale) for i in
+                            range(1, options["tackle"] + 1)],
+            "tackle_right": [QPixmap(f"{self.skin}/tackle_{i}.png").transformed(mirror).transformed(self.scale) for i in
                              range(1, options["tackle"] + 1)],
-            "writing_left": [QPixmap(f"{self.skin}/writing_{i}.png") for i in range(1, options["writing"] + 1)],
-            "writing_right": [QPixmap(f"{self.skin}/writing_{i}.png").transformed(mirror) for i in
+            "writing_left": [QPixmap(f"{self.skin}/writing_{i}.png").transformed(self.scale) for i in
+                             range(1, options["writing"] + 1)],
+            "writing_right": [QPixmap(f"{self.skin}/writing_{i}.png").transformed(mirror).transformed(self.scale) for i
+                              in
                               range(1, options["writing"] + 1)],
-            "dragging": [QPixmap(f"{self.skin}/dragging_{i}.png") for i in range(1, options["dragging"] + 1)],
-            "falling_left": [QPixmap(f"{self.skin}/falling_{i}.png") for i in range(1, options["falling"] + 1)],
-            "falling_right": [QPixmap(f"{self.skin}/falling_{i}.png").transformed(mirror) for i in
+            "dragging": [QPixmap(f"{self.skin}/dragging_{i}.png").transformed(self.scale) for i in
+                         range(1, options["dragging"] + 1)],
+            "falling_left": [QPixmap(f"{self.skin}/falling_{i}.png").transformed(self.scale) for i in
+                             range(1, options["falling"] + 1)],
+            "falling_right": [QPixmap(f"{self.skin}/falling_{i}.png").transformed(mirror).transformed(self.scale) for i
+                              in
                               range(1, options["falling"] + 1)]
         }
 
@@ -93,7 +104,11 @@ class ScreenPet(QLabel):
         self.close()
 
     def next_frame(self):
-        if self.size != self.frames[0].size():
+        oldHeight = self.size().height()
+        newHeight = self.frames[0].size().height()
+        if oldHeight != newHeight:
+            self.move(self.x(), self.y() + (oldHeight - newHeight))
+        if self.size() != self.frames[0].size():
             self.resize(self.frames[0].size())
         if self.thoughts == "move" or self.thoughts == "following":
             if abs(self.vy) + abs(self.vx) != 0:

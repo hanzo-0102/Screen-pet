@@ -3,6 +3,7 @@
   "tackle": 3,
   "writing": 6,
   "rotateWriting": false,
+  "size": 80,
   "maxSpeed": 2,
   "jumpHeight": 10,
   "dragging": 1,
