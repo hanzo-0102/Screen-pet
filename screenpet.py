@@ -1,3 +1,4 @@
+import importlib
 import math
 import sys
 import random
@@ -6,6 +7,7 @@ from PyQt5.QtWidgets import QApplication, QLabel
 from PyQt5.QtCore import Qt, QTimer, QPoint
 from PyQt5.QtGui import QPixmap, QTransform
 import pyautogui
+import importlib.util
 
 g = 2
 
@@ -78,6 +80,30 @@ class ScreenPet(QLabel):
         self.vy = 0
         self.vx = 0
 
+        self.customActions = {}
+
+        customNum = 0
+        while f"custom{customNum}" in options.keys() and f"custom{customNum}_chance" in options.keys() and f"custom{customNum}_length" in options.keys():
+            try:
+                if options[f"custom{customNum}"] != "":
+                    module_name = options[f"custom{customNum}"]
+                    spec = importlib.util.spec_from_file_location(module_name, f"{self.skin}/{module_name}.py")
+                    foo = importlib.util.module_from_spec(spec)
+                    sys.modules[module_name] = foo
+                    spec.loader.exec_module(foo)
+                    self.customActions[module_name] = [foo, options[f"custom{customNum}_chance"], options[f"custom{customNum}_rotate"]]
+                    self.animation[module_name + "_left"] = [
+                        QPixmap(f"{self.skin}/{module_name}_{i}.png").transformed(self.scale) for i in
+                        range(1, options[f"custom{customNum}_length"] + 1)]
+                    self.animation[module_name + "_right"] = [
+                        QPixmap(f"{self.skin}/{module_name}_{i}.png").transformed(mirror).transformed(self.scale) for i in
+                        range(1, options[f"custom{customNum}_length"] + 1)]
+                else:
+                    print("Error while loading", options[f"custom{customNum}"])
+            except Exception:
+                print("Error while loading", options[f"custom{customNum}"])
+            customNum += 1
+
         with open("chances.json", mode='r') as file:
             data = json.load(file)
             chances = [data[i] for i in data.keys()]
@@ -90,8 +116,10 @@ class ScreenPet(QLabel):
             for i in data.keys():
                 possible += int(data[i] * multiplier) * [i]
 
-            random.shuffle(possible)
             self.available_actions = possible
+
+        for customAction in self.customActions.keys():
+            self.available_actions += int(self.customActions[customAction][1] * multiplier) * [customAction + "_custom"]
 
         self.targetX = 100
         self.dragging = False
@@ -108,6 +136,17 @@ class ScreenPet(QLabel):
         newHeight = self.frames[0].size().height()
         if oldHeight != newHeight:
             self.move(self.x(), self.y() + (oldHeight - newHeight))
+
+        if len(self.thoughts.split("_")) >= 2 and self.thoughts.split("_")[-1] == "custom":
+            actionName = self.thoughts.split("_")
+            del actionName[-1]
+            actionName = "_".join(actionName)
+            if self.customActions[actionName][2]:
+                if pyautogui.position()[0] > self.x():
+                    self.frames = self.animation[actionName + "_right"]
+                else:
+                    self.frames = self.animation[actionName + "_left"]
+
         if self.size() != self.frames[0].size():
             self.resize(self.frames[0].size())
         if self.thoughts == "move" or self.thoughts == "following":
@@ -117,7 +156,17 @@ class ScreenPet(QLabel):
             else:
                 self.current_frame = 0
                 self.setPixmap(self.frames[self.current_frame])
-        elif self.thoughts == "tackle" or self.thoughts == "writing" or self.thoughts == "":
+        elif len(self.thoughts.split("_")) >= 2 and self.thoughts.split("_")[-1] == "custom":
+            actionName = self.thoughts.split("_")
+            del actionName[-1]
+            actionName = "_".join(actionName)
+            if hasattr(self.customActions[actionName][0], "animate"):
+                self.current_frame = max(self.customActions[actionName][0].animate(self.current_frame) % len(self.frames), 0)
+                self.setPixmap(self.frames[self.current_frame])
+            else:
+                self.current_frame = (self.current_frame + 1) % len(self.frames)
+                self.setPixmap(self.frames[self.current_frame])
+        else:
             self.current_frame = (self.current_frame + 1) % len(self.frames)
             self.setPixmap(self.frames[self.current_frame])
 
@@ -143,6 +192,11 @@ class ScreenPet(QLabel):
                         self.frames = self.animation["writing_left"]
                     if self.thoughts == "following":
                         self.frames = self.animation["right"]
+                    if len(self.thoughts.split("_")) >= 2 and self.thoughts.split("_")[-1] == "custom":
+                        actionName = self.thoughts.split("_")
+                        del actionName[-1]
+                        actionName = "_".join(actionName)
+                        self.frames = self.animation[actionName + "_left"]
 
             if self.y() != new_y:
                 if pyautogui.position()[0] > self.x():
@@ -212,6 +266,15 @@ class ScreenPet(QLabel):
                 self.tackling = True
             elif self.thoughts == "writing":
                 self.frames = self.animation["writing_left"]
+            elif len(self.thoughts.split("_")) >= 2 and self.thoughts.split("_")[-1] == "custom":
+                actionName = self.thoughts.split("_")
+                del actionName[-1]
+                actionName = "_".join(actionName)
+                self.frames = self.animation[actionName + "_left"]
+                if hasattr(self.customActions[actionName][0], "action"):
+                    self.customActions[actionName][0].action()
+                else:
+                    print("Error while preforming action. No available action")
 
     def mousePressEvent(self, event):
         if event.button() == Qt.LeftButton:

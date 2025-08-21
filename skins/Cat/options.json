@@ -1,1 +1,15 @@
-{"move": 6, "tackle": 4, "writing": 4, "rotateWriting": true, "size": 251, "maxSpeed": 3, "jumpHeight": 25, "dragging": 1, "falling": 1}
+{
+  "move": 6,
+  "tackle": 4,
+  "writing": 4,
+  "rotateWriting": true,
+  "size": 251,
+  "maxSpeed": 3,
+  "jumpHeight": 25,
+  "dragging": 1,
+  "falling": 1,
+  "custom0": "sleep",
+  "custom0_chance": 0.3,
+  "custom0_length": 10,
+  "custom0_rotate": false
+}
