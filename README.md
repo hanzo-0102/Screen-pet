@@ -25,7 +25,7 @@ Run console in folder with `launcher.py` file
 
 #### Folder structure
 
-```http
+```
   Character name
   |
   └──── options.json
@@ -39,7 +39,7 @@ Run console in folder with `launcher.py` file
 ```
 
 #### Options file
-```http
+```json
 {
   "move": AMOUNT_OF_MOVE_ANIMATION_FRAMES,
   "tackle": AMOUNT_OF_MOVE_ATTACKING_FRAMES,
@@ -56,7 +56,7 @@ Run console in folder with `launcher.py` file
 ## Advanced
 
 #### Additional folder structure
-```http
+```
  Character name
   |
   └──── newfunc.py
@@ -67,7 +67,7 @@ Run console in folder with `launcher.py` file
 
 #### Additional options structure
 Replace "?" with number of your custom function (starting from 0). If there will be no number between two functions - function with higher number won't load. If there is number between two function and lower number function didn't load because of error - it will be skipped up to higher number function. 
-```http
+```json
 {
   "custom?": "sleep",
   "custom?_chance": 0.3,
@@ -78,7 +78,7 @@ Replace "?" with number of your custom function (starting from 0). If there will
 
 
 #### newfunc.py structure
-```http
+```python
   def action(params):
     pass
 
@@ -114,7 +114,7 @@ Yes, of course. Feel free to use this code. _By the way, I'll be very thankful i
 
 This project is WIP, which means - more possibilities in the future. But if you want your specific feature to be added sooner - feel free to make pull requests or write your suggestions in "Issues" category
 
-#### OMG, this code is terrible??? Why is it so?
+#### OMG, this code is terrible!!! Why is it so?
 
 This project is my first project made to be opensource, so there may be a lot of features, troubles, bugs of little things, which should not be made while making opensource project. If you want to help me to fix something, make code cleaner or just want to join development - feel free to do so.
 
