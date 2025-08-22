@@ -104,6 +104,38 @@ class ScreenPet(QLabel):
                 print("Error while loading", options[f"custom{customNum}"])
             customNum += 1
 
+        if "main_script" in options.keys():
+            module_name = options["main_script"]
+            print(module_name)
+            spec = importlib.util.spec_from_file_location(module_name, f"{self.skin}/{module_name}.py")
+            self.main_func = importlib.util.module_from_spec(spec)
+            sys.modules[module_name] = self.main_func
+            spec.loader.exec_module(self.main_func)
+
+            def run_main_func():
+                params = {
+                    "current_frame": self.current_frame,
+                    "x": self.x(),
+                    "y": self.y(),
+                    "width": self.size().width(),
+                    "height": self.size().height(),
+                    "cur_thought": self.thoughts,
+                    "mouseX": pyautogui.position()[0],
+                    "mouseY": pyautogui.position()[1]
+                }
+                new_params = self.main_func.tick(params)
+                self.current_frame = new_params["current_frame"]
+                self.move(new_params["x"], new_params["y"])
+                self.thoughts = new_params["cur_thought"]
+
+            if hasattr(self.main_func, "tick"):
+                self.main_func_timer = QTimer()
+                self.main_func_timer.timeout.connect(run_main_func)
+                self.main_func_timer.start(100)
+            else:
+                print("No tick function found")
+
+
         with open("chances.json", mode='r') as file:
             data = json.load(file)
             chances = [data[i] for i in data.keys()]
@@ -292,7 +324,7 @@ class ScreenPet(QLabel):
                     "mouseY": pyautogui.position()[1]
                 }
                 if hasattr(self.customActions[actionName][0], "action"):
-                    self.customActions[actionName][0].action(params)
+                    self.customActions[actionName][0].start(params)
                 else:
                     print("Error while preforming action. No available action")
 

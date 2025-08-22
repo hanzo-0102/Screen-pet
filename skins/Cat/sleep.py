@@ -1,4 +1,4 @@
-def action():
+def start(params):
     print("ZZZZZZZZZZzzzzzz")
 
 def animate(params):

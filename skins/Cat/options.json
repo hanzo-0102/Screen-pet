@@ -3,7 +3,7 @@
   "tackle": 4,
   "writing": 4,
   "rotateWriting": true,
-  "size": 251,
+  "size": 119,
   "maxSpeed": 3,
   "jumpHeight": 25,
   "dragging": 1,
@@ -11,5 +11,6 @@
   "custom0": "sleep",
   "custom0_chance": 0.3,
   "custom0_length": 10,
-  "custom0_rotate": false
+  "custom0_rotate": false,
+  "main_script": "cat"
 }
