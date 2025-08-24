@@ -69,10 +69,18 @@ Run console in folder with `launcher.py` file
 Replace "?" with number of your custom function (starting from 0). If there will be no number between two functions - function with higher number won't load. If there is number between two function and lower number function didn't load because of error - it will be skipped up to higher number function. 
 ```json
 {
-  "custom?": "sleep",
+  "custom?": "new_func",
   "custom?_chance": 0.3,
   "custom?_length": 10,
-  "custom?_rotate": false
+  "custom?_rotate": false,
+}
+```
+
+If you want to add script, which will work always (not single-time action) - you need to add `main_script`
+
+```json
+{
+  "main_script": "main_script"
 }
 ```
 
@@ -84,6 +92,13 @@ Replace "?" with number of your custom function (starting from 0). If there will
 
   def animate(params):
     return new_cur_frame
+```
+
+#### main_script.py structure
+```python
+    def tick(params):
+    new_params = params.copy()
+    return new_params
 ```
 
 Parameters from `params`
@@ -104,6 +119,14 @@ Structure of `animate` function
 | :-------- | :------- | :-------------------------------- |
 | `new_cur_frame`      | `int` | Number of next animation frame from current animation sequence |
 
+Structure of `params` in `tick` function (tick function activates every 100ms, which means it will activate 10 times per second)
+| Parameter | Type     | Description                       |
+| :-------- | :------- | :-------------------------------- |
+| `current_frame`      | `int` | Number of current animetion frame for current animation sequence |
+| `x`      | `int` | X coordinate (in pixels) of top left corner of pet |
+| `y`      | `int` | Y coordinate (in pixels) of top left corner of pet |
+| `cur_thought`      | `string` | Current action of pet |
+
 ## FAQ
 
 #### Can I use this project code to make my project?
@@ -122,7 +145,18 @@ This project is my first project made to be opensource, so there may be a lot of
 
 Yes and no. Current 2 skins - are only skins, which are gonna be in this repository, made by me. But there is a high possibility, that I will create second repository with just skins of characters you ask for.
 
+#### Why my custom function doesn't work ?
+
+There are 4 possible reasons:
+- There is some issues in current version of Screen-pet, try to downgrade version of source code
+- Your files called incorrectly, check name of your files and compare it to file names in "options.json"
+- Your functions called incorrectly, compare function names with right names in this documentary
+- Your function causes error, try to debug it and check, if there is any issues
+
+#### I downloaded ████ project, which appears to be fork from yours and I have ████ issue, can you help me?
+
+No. I don't support any forks of my project, because it may have big changes of source code. You should ask fork's owner about your issue.
+
 #### Which coffee do you prefer?
 
 I like caramel-banana ice latte very much, but most of the time I drink espresso :3
-
